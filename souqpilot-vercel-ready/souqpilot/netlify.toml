@@ -1,0 +1,4 @@
+[build]
+  base = "souqpilot-vercel-ready/souqpilot"
+  command = "npm run build"
+  publish = ".next"
