@@ -73,7 +73,7 @@ async function handleCaptureCompleted(event: Record<string, unknown>, eventId: s
   const resource = event.resource as Record<string, unknown>;
   const paypalOrderId = resource.custom_id as string;
 
-  await db.$transaction(async (tx) => {
+  await db.$transaction(async (tx: any) => {
     const order = await tx.order.findFirst({
       where: { paypalCaptureId: paypalOrderId },
       include: { product: { select: { downloadLimit: true } } },
