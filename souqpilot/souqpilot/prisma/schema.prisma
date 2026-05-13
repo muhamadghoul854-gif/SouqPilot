@@ -1,0 +1,128 @@
+// SouqPilot — prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String    @unique @db.Citext
+  passwordHash     String    @map("password_hash")
+  fullName         String    @map("full_name")
+  avatarUrl        String?   @map("avatar_url")
+  role             String    @default("buyer")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  stripeCustomerId String?   @unique @map("stripe_customer_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  products      Product[]
+  orders        Order[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Product {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId      String   @db.Uuid @map("seller_id")
+  title         String
+  slug          String   @unique
+  description   String?
+  category      String
+  price         Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD") @db.Char(3)
+  s3Key         String   @map("s3_key")
+  s3Bucket      String   @map("s3_bucket")
+  previewUrl    String?  @map("preview_url")
+  thumbnailUrl  String?  @map("thumbnail_url")
+  isPublished   Boolean  @default(false) @map("is_published")
+  downloadLimit Int      @default(5) @map("download_limit")
+  fileSizeBytes BigInt?  @map("file_size_bytes")
+  version       String   @default("1.0")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  seller Product[]  @relation("SellerProducts")
+  orders  Order[]
+
+  @@map("products")
+}
+
+model Order {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String    @db.Uuid @map("user_id")
+  productId         String    @db.Uuid @map("product_id")
+  status            String    @default("pending")
+  totalAmount       Decimal   @db.Decimal(10, 2) @map("total_amount")
+  currency          String    @default("USD") @db.Char(3)
+  paymentProvider   String?   @map("payment_provider")
+  paymentIntentId   String?   @unique @map("payment_intent_id")
+  stripeSessionId   String?   @unique @map("stripe_session_id")
+  paypalCaptureId   String?   @unique @map("paypal_capture_id")
+  paidAt            DateTime? @map("paid_at")
+  refundedAt        DateTime? @map("refunded_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id])
+  product       Product        @relation(fields: [productId], references: [id])
+  downloadLinks DownloadLink[]
+  transactions  Transaction[]
+
+  @@map("orders")
+}
+
+model DownloadLink {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String    @db.Uuid @map("order_id")
+  token       String    @unique
+  expiresAt   DateTime  @map("expires_at")
+  clickCount  Int       @default(0) @map("click_count")
+  maxClicks   Int       @default(5) @map("max_clicks")
+  lastUsedAt  DateTime? @map("last_used_at")
+  ipAddress   String?   @map("ip_address")
+  revoked     Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("download_links")
+}
+
+model Transaction {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String   @db.Uuid @map("order_id")
+  eventType       String   @map("event_type")
+  provider        String
+  providerEventId String?  @unique @map("provider_event_id")
+  amount          Decimal  @db.Decimal(10, 2)
+  currency        String   @db.Char(3)
+  status          String
+  rawPayload      Json     @map("raw_payload")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("transactions")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}

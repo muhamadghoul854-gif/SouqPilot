@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --orange: #FF6B35;
+  --dark:   #080C14;
+  --navy:   #0D1220;
+  --cyan:   #00B4D8;
+  --green:  #06D6A0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--dark);
+  color: #E8EBF0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+::-webkit-scrollbar { width: 3px; background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--orange); }
